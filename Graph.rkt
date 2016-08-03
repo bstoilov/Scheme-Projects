@@ -3,6 +3,14 @@
 ;Define the empty graph 
 (define graph '())
 
+(define (split-path path)
+(regexp-split #rx"/" path))
+
+(define (contains? lst element)
+  (cond ((empty? lst) #f)
+        ((equal? (car lst) element) #t)
+        (else (contains? (cdr lst) element))))
+
 ; Graph mutator. All modify operations use this procedure 
 (define (modify-graph newGraph)
  (set! graph newGraph)
@@ -13,6 +21,15 @@
   (define (add-node-helper name children graph)
   (cons (list name children) graph))
   (modify-graph (add-node-helper name children graph)))
+
+(define (add-children children)
+(cond ((empty? children) "" )
+  (else (add-node (car children) '()) (add-children (cdr children))))
+  )
+
+(define (add name children)
+  (add-node name children)
+  (add-children children))
 
 ; Generic procedure which removes elements from list that match certain condition
 (define (remove-element elements condition?)
@@ -26,7 +43,7 @@
 (define (remove name)
   (define (remove-node name)
   (define (condition? element)
-    (eq? (car element) name))
+    (equal? (car element) name))
   (remove-element graph condition?))
 
   (define (remove-all-refs name)
@@ -47,6 +64,31 @@
  
 
 
-(add-node 1 '(2 3))
-(add-node 3 '(5 6))
-(add-node 2 '(7 8 9 10 11))
+(define (get-file name)
+  (define (get-file-helper system)
+    (cond ((empty? system) -1)
+          ((equal? (caar system) name) (car system)) 
+          (else (get-file-helper (cdr system)))
+          ))
+  
+  (get-file-helper graph))
+
+(define (has-child? file child)
+
+  (contains? (cadr file) child))
+
+(define (get-file-path path)
+  (define (helper pathList result)
+    (cond ((empty? pathList) result)
+          ((has-child? result (car pathList)) (helper (cdr pathList) (get-file (car pathList))))
+          (else -3)))
+  (helper (split-path path) (get-file "root"))
+  )
+  
+
+(add "root" '("dir1" "dir2" "dir3"))
+(add "dir2" (list (cons "file" "contents") "folder1" "folder2"))
+
+
+(define root (get-file "root"))
+(define dir2 (get-file "dir2"))
