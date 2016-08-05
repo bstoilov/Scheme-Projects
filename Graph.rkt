@@ -32,28 +32,17 @@
 
   (file-exists-helper? graph))
 
-
-; Adds a node to the graph ( name '(chidren) )  (add-node 1 '(2 3))
-(define (add-node node)
-  (cond ((file-exists? (car node)) (modify-graph (updateNode (merge-nodes node (get-file (car node))))))
-        (else (modify-graph (cons node graph)))
-        )
-  )
 (define (merge-nodes node1 node2)
 (gen-node (car node1) (append (cadr node1) (cadr node2))) 
   )
 
-(define (add-nodes nodeList)
-(modify-graph (list graph nodeList)))
-
-(define (add-all items)
-  (print items)
-(cond ((empty? items) "" )
-  (else (add-node (gen-node (car items) '())) (add-all (cdr items)))))
 
 (define (add node)
-  (add-node node)
-  (add-all (cadr node)))
+  (modify-graph (cons node graph))
+
+  )
+  ;(cond ((file-exists? (car node)) (modify-graph (updateNode (merge-nodes node (get-file (car node))))))
+        ;(else (modify-graph (cons node graph)))))
 
 ; Generic procedure which removes elements from list that match certain condition
 (define (remove-element elements condition?)
@@ -62,9 +51,15 @@
         (else (cons (car elements) (remove-element (cdr elements) condition? )))))
 
 (define (delete node)
+  (define (delete-helper system)
+    (cond ((empty? system) '())
+          (empty? (car system) '())
+          ((equal? (caar system) (car node)) '())
+          (else (cons (car system) (delete-helper (cdr system))))))
 
+  (delete-helper graph))
 
-  ) 
+ 
 
 (define (remove-all names)
 (cond ((empty? names) "")
@@ -107,11 +102,16 @@
    
 
 (define (mkdir path)
-(add-nodes (cons "/" (genPath (split-path path)))))
+  (define (mkdir-helper listPath)
+    (cond ((empty? listPath) "")
+          ((empty? (cdr listPath)) (gen-node (car listPath) '()))
+          (else (add (gen-node (car listPath) (list (cadr listPath)))) (mkdir-helper (cdr listPath)))))
+    
+(mkdir-helper (append '("/") (split-path path))))
 
 
 (define (rmdir path)
-(remove (get-last (split-path path))))
+(delete (get-last (split-path path))))
 
 
 
@@ -119,8 +119,10 @@
 ;(add (gen-node "/" '("2")))
 ;(add (gen-node "/" '("2" "5")))
 ;(add (gen-node "dir" '("dir2")))
-(mkdir "a/b/c")
-(rmdir "a/b/c")
+;(mkdir "a/b/c/d/f")
+;(rmdir "a/b/c")
+(add (gen-node "/" '("1")))
+(add (gen-node "/" '("2")))
 
 
 
