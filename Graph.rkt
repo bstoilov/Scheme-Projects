@@ -1,7 +1,10 @@
 #lang racket
 
+ (define (gen-node name children)
+   (cons name (list children)))
+
 ;Define the empty graph 
-(define graph (list (list "//" '())))
+(define graph '())
 
 (define (split-path path)
 (regexp-split #rx"/" path))
@@ -12,7 +15,6 @@
         (else (contains? (cdr lst) element))))
 
 (define (get-last lst)
-  (print lst)
 (cond ((empty? lst) "")
   ((empty? (cdr lst)) (car lst))
   (else (get-last (cdr lst)))))
@@ -22,22 +24,36 @@
  (set! graph newGraph)
   graph)
 
+(define (file-exists? name)
+  (define (file-exists-helper? system)
+    (cond ((empty? system) #f)
+          ((equal? (caar system) name) #t)
+          (else (file-exists-helper? (cdr system)))))
+
+  (file-exists-helper? graph))
+
+
 ; Adds a node to the graph ( name '(chidren) )  (add-node 1 '(2 3))
-(define (add-node name children)
-  (define (add-node-helper name children graph)
-  (cons (list name children) graph))
-  (modify-graph (add-node-helper name children graph)))
+(define (add-node node)
+  (cond ((file-exists? (car node)) (modify-graph (updateNode (merge-nodes node (get-file (car node))))))
+        (else (modify-graph (cons node graph)))
+        )
+  )
+(define (merge-nodes node1 node2)
+(gen-node (car node1) (append (cadr node1) (cadr node2))) 
+  )
 
 (define (add-nodes nodeList)
 (modify-graph (list graph nodeList)))
 
 (define (add-all items)
+  (print items)
 (cond ((empty? items) "" )
-  (else (add-node (car items) '()) (add-all (cdr items)))))
+  (else (add-node (gen-node (car items) '())) (add-all (cdr items)))))
 
-(define (add name children)
-  (add-node name children)
-  (add-all children))
+(define (add node)
+  (add-node node)
+  (add-all (cadr node)))
 
 ; Generic procedure which removes elements from list that match certain condition
 (define (remove-element elements condition?)
@@ -45,28 +61,10 @@
         ((condition? (car elements)) (remove-element (cdr elements) condition?))
         (else (cons (car elements) (remove-element (cdr elements) condition? )))))
 
+(define (delete node)
 
-; Removes a node, and all references to it.
-(define (remove name)
-  (define (remove-node name)
-  (define (condition? element)
-    (equal? (car element) name))
-  (remove-element graph condition?))
 
-  (define (remove-all-refs name)
-    (define (remove-child name node)
-      (define (condition? element)
-        (eq? name element))
-      (cons (car node) (list (remove-element (cadr node) condition?))))
-    
-    (define (remove-all-refs-helper name graph)
-      (cond ((empty? graph) graph)
-            (else (cons (remove-child name (car graph))  (remove-all-refs-helper name (cdr graph))))))
-  
-  (remove-all-refs-helper name graph))
-  
-  (modify-graph (remove-node name))
-  (modify-graph (remove-all-refs name)))
+  ) 
 
 (define (remove-all names)
 (cond ((empty? names) "")
@@ -95,21 +93,36 @@
           ((empty? (cdr listPath)) (cons (list (car listPath) '()) (genPath (cdr listPath))))
           (else (cons (list (car listPath) (list (cadr listPath))) (genPath (cdr listPath))))))
 
+(define (updateNode updatedNode)
+
+  (define (updateNode-helper system)
+    (cond ((empty? system) '())
+          ((equal? (caar system) (car updatedNode)) (cons updatedNode (updateNode-helper (cdr system))))
+          (else (cons (car system) (updateNode-helper (cdr system))))))
+
+  (updateNode-helper graph))
+  
+
+
+   
+
 (define (mkdir path)
-(add-nodes (genPath (split-path path))))
+(add-nodes (cons "/" (genPath (split-path path)))))
 
 
 (define (rmdir path)
-  
-(get-last (split-path path))
-  )
-
-(add "/" '("dir1" "dir2" "dir3"))
-(add "dir2" (list (cons "file" "contents") "dir3" "folder2"))
-(add "dir3" '("f1" "f2"))
+(remove (get-last (split-path path))))
 
 
-(define root (get-file "root"))
-(define dir2 (get-file "dir2"))
 
-;(mkdir "a/b/c")
+;(add (gen-node "/" '("1")))
+;(add (gen-node "/" '("2")))
+;(add (gen-node "/" '("2" "5")))
+;(add (gen-node "dir" '("dir2")))
+(mkdir "a/b/c")
+(rmdir "a/b/c")
+
+
+
+graph
+
