@@ -113,7 +113,3 @@
   (display (cdr resCons))
   (display " Cows")
   (equal? (car resCons) 4))
-
-
-
-
