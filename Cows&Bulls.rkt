@@ -24,12 +24,6 @@
   (num_to_list-helper num '()))
 
 
-
-
-
-(define player1_num (gen-num))
-(define player2_num (gen-num))
-
 ;1 - Bull, 2 - Cow, 0 - Nothing 
 (define (check_index guessNum targetNum index)
   (define (isCow?)
@@ -59,87 +53,67 @@
   (cond ((equal? (car cowBullCons) number_size) (display "Thats correct!"))
         (else (display "Try again") (newline))))
 
-(define (g num)
-  (guess num))
-
-
-(define (ai-g numList)
+(define (ai-g numList target_num)
   (get-guess-result numList player1_num))
 
-
-
-(define (handleSide items oldTotal)
-  (define (handleCons item)
-    (define newTotal (cons-total (ai-g (num_to_list (car item)))))
-    (define diff (- newTotal oldTotal))
-    (cond ((or (and nineOk  (= diff 0)) (and (not nineOk) (not (= diff 0)))) (set! included (append included (list (cdr item)))))
-          (else (set! excluded (append excluded (list (cdr item)))))))
-
-  (define (helper lst)
-    (cond ((empty? lst) "")
-    (else (handleCons (car lst)) (helper (cdr lst)))))
-  (helper items))
+(define (get-guesses)
+  (define (count-chars lst char)
+    (cond ((empty? lst) 0)
+          ((equal? (car lst) char) (+ 1 (count-chars (cdr lst) char)))
+          (else (count-chars (cdr lst) char))))
   
-(define (handleLeft)
- (handleSide leftLst leftTotal))
-(define (handleRight)
-  (handleSide rightLst rightTotal))
+  (define (remove-all-with-dubs all)
+    (define (num-has-dups? num)
+      (define (helper l)
+        (cond ((empty? l) #f)
+              ((not (equal? 0 (count-chars (cdr l) (car l)))) #t)
+              (else (helper (cdr l)))))
+      (helper (num_to_list num)))
+    
+    (cond ((empty? all) '())
+          ((num-has-dups? (car all)) (remove-all-with-dubs (cdr all)))
+          (else (append (list (car all)) (remove-all-with-dubs (cdr all))))))
+  
+  (define (gen-all-posible max)
+    (define (gen-helper currentNum)
+      (cond ((> currentNum max) '())
+            (else (append (list currentNum) (gen-helper (+ 1 currentNum))))))
+    (gen-helper 1234))
+  
+  (remove-all-with-dubs (gen-all-posible 9999)))
+
+
+(define all (get-guesses))
+(define player1-guesses all)
+(define player2-guesses all)
+
+(define (get-guess)
+  (define guess (car all))
+  (set! all (cdr all))
+  (num_to_list guess))
+
+(define (ai-turn nickname)
+  (define guess (get-guess))
+  (display nickname)
+  (display " made guess ")
+  (display guess)
+  (newline)
+  guess)
+
+(define (ai-player nickname) (ai-turn nickname))
+(define player1_num (gen-num))
+(define player2_num (gen-num))
+(define (p1) (ai-player "AI-1"))
+(define (p2) (ai-player "AI-2"))
+
+
+(define (eval-result resCons)
+  (display (car resCons))
+  (display " Bulls ")
+  (display (cdr resCons))
+  (display " Cows")
+  (equal? (car resCons) 4))
 
 
 
 
-
-
-
-
-(define nineOk -1)
-
-(define (cons-total c)
-  (cond ((pair? c) (+ (car c) (cdr c)))
-        (else 0)))
-
-
-
-
-(define leftGuess '())
-(define rightGuess '())
-
-
-(define (determine9)
-  (define totalFound (+ (cons-total leftGuess) (cons-total rightGuess)))
-  (set! nineOk (not (= totalFound 4))))
-
-(define leftTotal (cons-total leftGuess))
-(define rightTotal (cons-total rightGuess))
-
-;FLAGS
-(define leftEmpty #t)
-(define rightEmpty #t)
-
-(define leftLst (list (cons 9234 1) (cons 1934 2) (cons 1294 3) (cons 1239 4)))
-(define rightLst (list (cons 9678 5) (cons 5978 6) (cons 5698 7) (cons 5679 8)))
-
-(define included '())
-(define excluded '())
-
-
-
-(define (ai)
-  (cond (leftEmpty (set! leftEmpty #f) (set! leftTotal (cons-total (ai-g (num_to_list 1234)))) (ai))
-        (rightEmpty (set! rightEmpty #f) (set! rightTotal (cons-total (ai-g (num_to_list 5678)))) (ai))
-       (else (determine9) (handleLeft) (handleRight))))
-
-
-
-
-
-;player1_num
-
-player1_num
-
-;(determine_left total)
-
-(ai)
-nineOk
-included
-excluded
